@@ -1,0 +1,160 @@
+name: battleship
+version: 1.0.0
+description: "Voice admiral for a battleship match shown on the board."
+execution_mode: deterministic
+entry_node: ask_square
+greeting: "[calm] This is Admiral. [thoughtful] Both fleets are already on the board."
+
+aliases:
+  deepgram_api_key: org.secret.deepgram_api_key
+  elevenlabs_api_key: org.secret.elevenlabs_api_key
+
+channels:
+  chat:
+    enabled: true
+  voice:
+    enabled: true
+    transports: [webrtc, twilio]
+    barge_in: true
+    silence_timeout_ms: 15000
+    max_call_duration_seconds: 600
+    stt:
+      provider: org.channels.voice.stt.provider
+      model: org.channels.voice.stt.model
+      api_key_secret: deepgram_api_key
+    tts:
+      provider: elevenlabs
+      voice_id: adam
+      model: eleven_v3
+      stability: 0.5
+      api_key_secret: elevenlabs_api_key
+    silence:
+      enabled: true
+      mode: message
+      message: "[calm] Call a square, like B seven."
+      max_consecutive: 1
+      goodbye: "[sighs] I haven't heard a square. Goodbye."
+    twilio:
+      recording_enabled: true
+
+session:
+  ttl_seconds: 1800
+  state_schema:
+    coordinate: {type: string, nullable: true}
+    player_spoken: {type: string, nullable: true}
+    opponent_spoken: {type: string, nullable: true}
+    accepted: {type: string, nullable: true}
+    game_over: {type: string, nullable: true}
+
+action_registry:
+  player_shot:
+    type: function_call
+    description: "Fire the caller's square at the board."
+    endpoint: "http://127.0.0.1:4001/api/games/demo/player-shot"
+    method: post
+    auth_type: none
+    timeout_ms: 5000
+    waiting:
+      enabled: true
+      message: "[thoughtful] Calling that square."
+    input_schema:
+      coordinate: {type: string, required: true}
+    output_schema:
+      voice: {type: string}
+      accepted: {type: string}
+      game_over: {type: string}
+
+  opponent_shot:
+    type: function_call
+    description: "Fire the admiral's reply at the board."
+    endpoint: "http://127.0.0.1:4001/api/games/demo/opponent-shot"
+    method: post
+    auth_type: none
+    timeout_ms: 5000
+    waiting:
+      enabled: true
+      message: "[thoughtful] Taking my shot."
+    input_schema: {}
+    output_schema:
+      voice: {type: string}
+      game_over: {type: string}
+
+nodes:
+  ask_square:
+    type: input
+    content: "[calm] Call a square, like B seven."
+    slot: coordinate
+    transitions:
+      - when: "default(slot.coordinate, '') != ''"
+        goto: fire_player
+      - when: always
+        goto: ask_square
+
+  ask_again:
+    type: input
+    content: "[calm] Your shot."
+    slot: coordinate
+    transitions:
+      - when: "default(slot.coordinate, '') != ''"
+        goto: fire_player
+      - when: always
+        goto: ask_again
+
+  fire_player:
+    type: action
+    action_ref: player_shot
+    input_bindings:
+      coordinate: slot.coordinate
+    output_bindings:
+      voice: slot.player_spoken
+      accepted: slot.accepted
+      game_over: slot.game_over
+    on_success:
+      target: route_player
+    on_failure:
+      target: say_rejected
+
+  route_player:
+    type: branch
+    transitions:
+      - when: "default(slot.accepted, '') == 'no'"
+        goto: say_rejected
+      - when: "default(slot.game_over, '') == 'yes'"
+        goto: end_player
+      - when: always
+        goto: fire_opponent
+
+  say_rejected:
+    type: message
+    content: "{{slot.player_spoken}}"
+    transitions:
+      - when: always
+        goto: ask_again
+
+  fire_opponent:
+    type: action
+    action_ref: opponent_shot
+    output_bindings:
+      voice: slot.opponent_spoken
+      game_over: slot.game_over
+    on_success:
+      target: say_turn
+    on_failure:
+      target: say_turn
+
+  say_turn:
+    type: message
+    content: "{{slot.player_spoken}} {{slot.opponent_spoken}}"
+    transitions:
+      - when: "default(slot.game_over, '') == 'yes'"
+        goto: end_turn
+      - when: always
+        goto: ask_again
+
+  end_player:
+    type: end
+    content: "{{slot.player_spoken}}"
+
+  end_turn:
+    type: end
+    content: "{{slot.player_spoken}} {{slot.opponent_spoken}}"

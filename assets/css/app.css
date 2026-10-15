@@ -1,0 +1,535 @@
+/* See the Tailwind configuration guide for advanced usage
+   https://tailwindcss.com/docs/configuration */
+
+@import "tailwindcss" source(none);
+@source "../css";
+@source "../js";
+@source "../../lib/battleship_web";
+
+/* A Tailwind plugin that makes "hero-#{ICON}" classes available.
+   The heroicons installation itself is managed by your mix.exs */
+@plugin "../vendor/heroicons";
+
+/* daisyUI Tailwind Plugin. You can update this file by fetching the latest version with:
+   curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui.js
+   Make sure to look at the daisyUI changelog: https://daisyui.com/docs/changelog/ */
+@plugin "../vendor/daisyui" {
+  themes: false;
+}
+
+/* daisyUI theme plugin. You can update this file by fetching the latest version with:
+  curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.js
+  We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
+  on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
+@plugin "../vendor/daisyui-theme" {
+  name: "dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: oklch(30.33% 0.016 252.42);
+  --color-base-200: oklch(25.26% 0.014 253.1);
+  --color-base-300: oklch(20.15% 0.012 254.09);
+  --color-base-content: oklch(97.807% 0.029 256.847);
+  --color-primary: oklch(58% 0.233 277.117);
+  --color-primary-content: oklch(96% 0.018 272.314);
+  --color-secondary: oklch(58% 0.233 277.117);
+  --color-secondary-content: oklch(96% 0.018 272.314);
+  --color-accent: oklch(60% 0.25 292.717);
+  --color-accent-content: oklch(96% 0.016 293.756);
+  --color-neutral: oklch(37% 0.044 257.287);
+  --color-neutral-content: oklch(98% 0.003 247.858);
+  --color-info: oklch(58% 0.158 241.966);
+  --color-info-content: oklch(97% 0.013 236.62);
+  --color-success: oklch(60% 0.118 184.704);
+  --color-success-content: oklch(98% 0.014 180.72);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "../vendor/daisyui-theme" {
+  name: "light";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  --color-base-100: oklch(98% 0 0);
+  --color-base-200: oklch(96% 0.001 286.375);
+  --color-base-300: oklch(92% 0.004 286.32);
+  --color-base-content: oklch(21% 0.006 285.885);
+  --color-primary: oklch(70% 0.213 47.604);
+  --color-primary-content: oklch(98% 0.016 73.684);
+  --color-secondary: oklch(55% 0.027 264.364);
+  --color-secondary-content: oklch(98% 0.002 247.839);
+  --color-accent: oklch(0% 0 0);
+  --color-accent-content: oklch(100% 0 0);
+  --color-neutral: oklch(44% 0.017 285.786);
+  --color-neutral-content: oklch(98% 0 0);
+  --color-info: oklch(62% 0.214 259.815);
+  --color-info-content: oklch(97% 0.014 254.604);
+  --color-success: oklch(70% 0.14 182.503);
+  --color-success-content: oklch(98% 0.014 180.72);
+  --color-warning: oklch(66% 0.179 58.318);
+  --color-warning-content: oklch(98% 0.022 95.277);
+  --color-error: oklch(58% 0.253 17.585);
+  --color-error-content: oklch(96% 0.015 12.422);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.5rem;
+  --size-selector: 0.21875rem;
+  --size-field: 0.21875rem;
+  --border: 1.5px;
+  --depth: 1;
+  --noise: 0;
+}
+
+/* Add variants based on LiveView classes */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+/* Use the data attribute for dark mode  */
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* Make LiveView wrapper divs transparent for layout */
+[data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* This file is for your main application CSS */
+
+:root {
+  --sea: #061018;
+  --panel: #08141e;
+  --ink: #d7e6f2;
+  --cream: #f4e7c5;
+  --tide: #9ec8e4;
+  --deep: #1d4e89;
+  --deep-hot: #2563a8;
+  --alarm: #8f2d2d;
+  --alarm-hot: #a33a3a;
+  --miss: #8eb6ff;
+  --hit: #ff9614;
+  --sunk: #ff5a45;
+  --line: rgba(215, 230, 242, 0.16);
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--sea);
+  color: var(--ink);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+::selection {
+  background: var(--deep);
+  color: var(--cream);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cream);
+  outline-offset: 2px;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+#battleship {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  background: var(--sea);
+}
+
+#battleship > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 1.25rem;
+  row-gap: 0.35rem;
+  align-items: center;
+  padding: 0.85rem 1.25rem 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.brand h1,
+.brand p,
+#last-spoken,
+#call-note,
+#admiral h2,
+.shots h2,
+#admiral-log p,
+#admiral-status {
+  margin: 0;
+}
+
+.brand h1 {
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.brand p {
+  color: var(--cream);
+  font-size: 0.95rem;
+}
+
+#last-spoken {
+  grid-column: 1 / -1;
+  color: var(--cream);
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+#voice {
+  display: flex;
+}
+
+#call,
+#new-match,
+#admiral-fleet,
+#admiral-send {
+  min-height: 2.75rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color 160ms ease-out, border-color 160ms ease-out;
+}
+
+#call,
+#new-match,
+#admiral-fleet {
+  border: 1px solid var(--line);
+  background: transparent;
+  padding: 0.45rem 1rem;
+}
+
+#call:hover,
+#new-match:hover,
+#admiral-fleet:hover {
+  background: rgba(215, 230, 242, 0.08);
+}
+
+#admiral-fleet[aria-pressed="true"] {
+  background: var(--deep);
+  border-color: transparent;
+  color: var(--cream);
+}
+
+#call[data-state="connecting"] {
+  cursor: progress;
+}
+
+#call[data-state="live"] {
+  background: var(--alarm);
+  border-color: transparent;
+  color: var(--cream);
+}
+
+#call[data-state="live"]:hover {
+  background: var(--alarm-hot);
+}
+
+#call[data-state="failed"] {
+  border-color: var(--sunk);
+  color: var(--sunk);
+}
+
+#new-match.phx-click-loading,
+#admiral-fleet.phx-click-loading {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+#call-note {
+  flex: 1 0 100%;
+  color: var(--sunk);
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+#call-note:empty {
+  display: none;
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24rem;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+#board {
+  min-width: 0;
+  min-height: 0;
+  background: #000;
+}
+
+#board canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#battleship aside {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+  padding: 1rem 1rem 0.75rem;
+}
+
+#admiral {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+#admiral h2,
+.shots h2 {
+  color: var(--tide);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+#admiral-log {
+  flex: 1;
+  min-height: 0;
+  margin-top: 0.75rem;
+  padding: 0 0.15rem 0 0;
+  overflow: auto;
+  list-style: none;
+  scrollbar-color: rgba(158, 200, 228, 0.45) transparent;
+}
+
+#admiral-log li {
+  width: fit-content;
+  max-width: 92%;
+  margin-top: 0.65rem;
+  padding: 0.55rem 0.75rem 0.6rem;
+  border-radius: 0.85rem;
+  background: rgba(215, 230, 242, 0.07);
+}
+
+#admiral-log li[data-role="you"] {
+  margin-left: auto;
+  background: var(--deep);
+}
+
+#admiral-log .who {
+  display: block;
+  margin-bottom: 0.15rem;
+  color: var(--tide);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+#admiral-log li[data-role="you"] .who {
+  color: var(--cream);
+}
+
+#admiral-log p {
+  line-height: 1.4;
+}
+
+#admiral-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+
+#admiral-form label {
+  flex-basis: 100%;
+  color: var(--tide);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+#admiral-input {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  caret-color: var(--cream);
+  padding: 0.45rem 0.95rem;
+}
+
+#admiral-input::placeholder {
+  color: var(--tide);
+}
+
+#admiral-send {
+  border: 0;
+  background: var(--deep);
+  padding: 0.45rem 1rem;
+}
+
+#admiral-send:hover:not(:disabled) {
+  background: var(--deep-hot);
+}
+
+#admiral-send:disabled,
+#admiral-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+#admiral-status {
+  min-height: 1.25rem;
+  margin-top: 0.45rem;
+  color: var(--cream);
+  font-size: 0.8rem;
+}
+
+#admiral-status[data-tone="error"] {
+  color: var(--sunk);
+}
+
+.shots {
+  display: flex;
+  flex-direction: column;
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 50%;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+  overflow: hidden;
+}
+
+#shot-log {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0.35rem 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+  scrollbar-color: rgba(158, 200, 228, 0.45) transparent;
+}
+
+#shot-log li {
+  display: grid;
+  grid-template-columns: 5.25rem 3.25rem minmax(0, 1fr);
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.32rem 0;
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+#shot-log li:last-child {
+  border-bottom: 0;
+}
+
+#shot-log .who {
+  color: var(--tide);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+#shot-log li[data-side="yours"] .who {
+  color: var(--cream);
+}
+
+#shot-log .coord {
+  font-weight: 650;
+}
+
+#shot-log .outcome {
+  text-align: right;
+}
+
+#shot-log li[data-result="miss"] .outcome {
+  color: var(--miss);
+}
+
+#shot-log li[data-result="hit"] .outcome {
+  color: var(--hit);
+}
+
+#shot-log li[data-result="sunk"] .outcome {
+  color: var(--sunk);
+}
+
+#shot-log .empty {
+  display: block;
+  color: var(--tide);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 860px) {
+  #battleship > header {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    justify-content: flex-start;
+  }
+
+  #last-spoken,
+  #call-note {
+    grid-column: 1;
+    text-align: left;
+  }
+
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(18rem, 1fr) minmax(16rem, 46vh);
+  }
+
+  #battleship aside {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .brand h1 {
+    font-size: 1.15rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #call,
+  #new-match,
+  #admiral-fleet,
+  #admiral-send {
+    transition: none;
+  }
+}
